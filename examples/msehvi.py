@@ -1,3 +1,4 @@
+from datetime import datetime
 from baselines.problems.flowers import discrete_flowers
 from baselines.problems import get_flowers
 from baselines.problems.fashion import discrete_fashion
@@ -7,8 +8,10 @@ from baselines.problems import get_nasbench201, NasBench201NPY
 from baselines import save_experiment
 from baselines.methods.msehvi.msehvi import MSEHVI
 
+from time import time
 from tqdm import tqdm
 from ax import Models
+import sys
 
 
 if __name__ == '__main__':
@@ -35,24 +38,37 @@ if __name__ == '__main__':
     # experiment = get_branin_currin('MSEHVI')
 
     # Parameters Nas-Bench-201
-    N_init = 10
-    N = 90
-    discrete_f = NasBench201NPY().discrete_call
+    N_init = 50
+    nb201 = NasBench201NPY()
+    discrete_f = nb201.discrete_call
     discrete_m = 'num_params'
     experiment = get_nasbench201('MSEHVI')
 
     #################
     #### MS-EHVI ####
     #################
-
+    curr_time = time()
+    initial_time = curr_time
     # Random search initialization
     for _ in tqdm(range(N_init), desc='Random Initialization'):
-        experiment.new_trial(Models.SOBOL(experiment.search_space).gen(1))
+        trial = experiment.new_trial(Models.SOBOL(experiment.search_space).gen(1))
         experiment.fetch_data()
+
+        # Artificially add the time
+        trial._time_created = datetime.fromtimestamp(curr_time)
+        curr_time = curr_time + nb201.time(trial.arm.parameters)
+        trial._time_completed = datetime.fromtimestamp(curr_time)
 
     # Proper guided search
     msehvi = MSEHVI(experiment, discrete_m, discrete_f)
-    for _ in tqdm(range(N), desc='MSEHVI'):
+    while curr_time - initial_time < 86400:
         msehvi.step()
+
+        # Artificially add the time
+        trial = list(experiment.trials.values())[-1]
+        trial._time_created = datetime.fromtimestamp(curr_time)
+        curr_time = curr_time + nb201.time(trial.arm.parameters)
+        trial._time_completed = datetime.fromtimestamp(curr_time)
+        print('Time left: ', 86400 - (curr_time - initial_time), file=sys.stderr, flush=True)
      
-    save_experiment(experiment, f'{experiment.name}_100.pickle')
+    save_experiment(experiment, f'{experiment.name}_time.pickle')

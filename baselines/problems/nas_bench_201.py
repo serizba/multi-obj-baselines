@@ -7,7 +7,7 @@ from nas_201_api import NASBench201API as API
 from ax import Metric
 from ax.core.search_space import SearchSpace
 from ax.core.objective import MultiObjective
-from ax.core.parameter import ChoiceParameter, ParameterType, RangeParameter
+from ax.core.parameter import ChoiceParameter, FixedParameter, ParameterType, RangeParameter
 from ax.core.outcome_constraint import ObjectiveThreshold
 from ax.core.optimization_config import MultiObjectiveOptimizationConfig
 
@@ -16,7 +16,8 @@ from baselines import MultiObjectiveSimpleExperiment
 def get_nasbench201(name=None):
 
     val_acc = Metric('val_acc', True)
-    tst_acc = Metric('tst_acc', True)
+    tst_acc_200 = Metric('tst_acc_200', True)
+    val_acc_200 = Metric('val_acc_200', True)
     num_params = Metric('num_params', True)
 
     objective = MultiObjective([val_acc, num_params])
@@ -34,6 +35,7 @@ def get_nasbench201(name=None):
             name=f'p{p}', parameter_type=ParameterType.INT, values=[0, 1, 2, 3, 4]
         ) for p in range(1, 6+1)
     ]
+    params.append(FixedParameter('budget', ParameterType.INT, 12))
     search_space = SearchSpace(
         parameters=params,
     )
@@ -45,7 +47,7 @@ def get_nasbench201(name=None):
         search_space=search_space,
         eval_function=nasbench201,
         optimization_config=optimization_config,
-        extra_metrics=[tst_acc]
+        extra_metrics=[tst_acc_200, val_acc_200]
     )
 
 # class NasBench201:
@@ -84,14 +86,31 @@ class NasBench201NPY:
     def __init__(self):
         self.api = np.load('nasbench201_tst.npy')
 
+    def time(self, x):
+        if 'budget' not in x:
+            budget = 200
+        else:
+            budget = x['budget']
+        
+        p1, p2, p3 = int(x['p1']), int(x['p2']), int(x['p3'])
+        p4, p5, p6 = int(x['p4']), int(x['p5']), int(x['p6'])
+        info = self.api[p1, p2, p3, p4, p5, p6]
+        return info[202] * budget        
+
     def __call__(self, x):
+        if 'budget' not in x:
+            budget = 199
+        else:
+            budget = x['budget']
+        
         p1, p2, p3 = int(x['p1']), int(x['p2']), int(x['p3'])
         p4, p5, p6 = int(x['p4']), int(x['p5']), int(x['p6'])
         info = self.api[p1, p2, p3, p4, p5, p6]
         return {
-            'val_acc': (-1.0 * info[0], 0.0),
-            'tst_acc': (-1.0 * info[1], 0.0),
-            'num_params': (info[2], 0.0),        
+            'val_acc': (-1.0 * info[budget-1], 0.0),
+            'tst_acc_200': (-1.0 * info[200], 0.0),
+            'val_acc_200': (-1.0 * info[200-1], 0.0),
+            'num_params': (info[201], 0.0),        
         }
 
     def discrete_call(self, x):
