@@ -30,7 +30,7 @@ class Net(torch.nn.Module):
     def __init__(self):
         super(Net, self).__init__()
 
-        self.fc2 = torch.nn.Linear(13, 10)
+        self.fc2 = torch.nn.Linear(6, 10)
         torch.nn.init.normal_(self.fc2.weight)
         torch.nn.init.normal_(self.fc2.bias)
 

@@ -9,9 +9,9 @@ from .member import Member
 from .member import Mutation
 from baselines import nDS_index, crowdingDist
 import math
+from datetime import datetime
 
-
-class BANANAS:
+class BANANAS_SH:
     """
     Class to group ensamble of NN
     """
@@ -39,26 +39,27 @@ class BANANAS:
 
         self.iterations = (self.num_function_evaluations - self.initial_samples)// (self.select//self.eta)
 
-    def steps(self):
+    def step(self, curr_time, initial_time, time_duration, bench):
 
-        it = 0
 
-        while it < self.iterations:
 
-            it = it + 1
-            train_data = [member.return_train_data() for member in self.architecture_list]
-            y_train_data = [member.fitness for member in self.architecture_list]
-            train_data = [[train_data[i], [-y_train_data[i][0]/10, y_train_data[i][1]]] for i in range(len(train_data))]
-            self.neural_predictor.train_models(train_data)
+        train_data = [member.return_train_data() for member in self.architecture_list]
+        y_train_data = [member.fitness for member in self.architecture_list]
+        train_data = [[train_data[i], [-y_train_data[i][0]/10, y_train_data[i][1]]] for i in range(len(train_data))]
+        self.neural_predictor.train_models(train_data)
 
-            # choose best configs
-            best_configs = self._select_best_architectures_mo(self.num_arch)
-            mutated_configs = [member.mutate() for member in best_configs]
-            test_data = [member.return_train_data() for member in mutated_configs]
-            chosen_models = self.neural_predictor.choose_models(mutated_configs,test_data, self.select)
-            chosen_models = self.successive_halving(chosen_models, self.min_budget, self.max_budget, eta=3)
+        # choose best configs
+        best_configs = self._select_best_architectures_mo(self.num_arch)
+        mutated_configs = [member.mutate() for member in best_configs]
+        test_data = [member.return_train_data() for member in mutated_configs]
+        chosen_models = self.neural_predictor.choose_models(mutated_configs,test_data, self.select)
 
-            self.architecture_list.extend(chosen_models)
+
+        
+
+        chosen_models = self.successive_halving(chosen_models, self.min_budget, self.max_budget, curr_time, initial_time, time_duration, bench,eta=3)
+
+        self.architecture_list.extend(chosen_models)
 
         return
 
@@ -74,17 +75,43 @@ class BANANAS:
         return budgets
 
 
-    def successive_halving(self, members, min_budget, max_budget, eta = 3):
+    def successive_halving(self, members, min_budget, max_budget, curr_time, initial_time, time_duration, bench, eta = 3):
 
         budgets = self.get_budgets(min_budget, max_budget, eta)
-        print(budgets)
-        print(members)
-        for b in budgets[::-1]:
-            members[0].budget = b
-            for member in members:
-                member.budget = b
+        execute = True
 
-            fit = [member.fitness for member in members]
+
+        for b in budgets[::-1]:
+            if execute == True:
+
+               members[0].budget = b
+
+               for member in members:
+                   member.budget = b
+
+               fit = []
+
+               for member in members:
+
+                   if execute == True:
+                        time_budget = curr_time - initial_time
+                        trial = list(self.experiment.trials.values())[-1]
+                        trial._time_created = datetime.fromtimestamp(curr_time)
+                        curr_time = curr_time + bench.time(trial.arm.parameters)
+                        trial._time_completed = datetime.fromtimestamp(curr_time)
+
+
+                   
+                   if curr_time - initial_time > time_duration:
+
+                        execute = False
+                        break;
+
+                   else:
+
+                        fit.append(member.fitness)
+           
+
             members = self.sort_architectures(members)
             members = members[0:len(members)//eta]
 
@@ -140,7 +167,9 @@ def get_MOSHBANANAS(experiment, search_space,
     # save models and dict so it can be picked up later on
 
     neural_predictor = Neural_Predictor(num_epochs = 80, num_ensamble_nets = 5)
-    banana = BANANAS(neural_predictor, experiment, search_space, initial_samples, num_arch, max_budget,min_budget, eta,  select_models, function_evaluations)
+    banana = BANANAS_SH(neural_predictor, experiment, search_space, initial_samples, num_arch, max_budget,min_budget, eta,  select_models, function_evaluations)
+    
+
     banana.steps()
 
     return

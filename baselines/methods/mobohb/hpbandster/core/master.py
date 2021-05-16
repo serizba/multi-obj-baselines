@@ -5,9 +5,9 @@ import math
 import pdb
 import copy
 import logging
-
+import time
 import numpy as np
-
+from datetime import datetime
 
 from hpbandster.core.dispatcher import Dispatcher
 from hpbandster.core.result import Result
@@ -196,10 +196,13 @@ class Master(object):
 			self.logger.info('HBMASTER: starting run at %s'%(str(self.time_ref)))
 
 		self.thread_cond.acquire()
+		curr_time = time.time()
+		initial_time = curr_time
 		while True:
 
+
 			self._queue_wait()
-			
+
 			next_run = None
 			# find a new run to schedule
 			for i in self.active_iterations():
@@ -218,10 +221,20 @@ class Master(object):
 
 			# at this point there is no imediate run that can be scheduled,
 			# so wait for some job to finish if there are active iterations
+
+			print(curr_time - initial_time < duration)
+			print(self.active_iterations())
 			if self.active_iterations():
+
 				self.thread_cond.wait()
 			else:
 				break
+
+
+			#if self.active_iterations():
+		#		self.thread_cond.wait()
+		#	else:
+		#		break
 
 		self.thread_cond.release()
 		

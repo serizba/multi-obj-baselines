@@ -56,26 +56,26 @@ class Member:
             params = deepcopy(self._x)
             params['budget'] = int(self._budget)
 
-            params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 16
-            params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 16
-            params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 16
+            #params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 16
+            #params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 16
+            #params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 16
 
-            params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 16
-            params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 16
-            params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 16
+            #params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 16
+            #params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 16
+            #params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 16
 
-            params['batch_norm'] = bool(params['batch_norm'])
-            params['global_avg_pooling'] = bool(params['global_avg_pooling'])
+            #params['batch_norm'] = bool(params['batch_norm'])
+            #params['global_avg_pooling'] = bool(params['global_avg_pooling'])
 
-            trial_name = '{}-{}'.format(self._id, self._num_evals)
-            params['id'] = trial_name
+            #trial_name = '{}-{}'.format(self._id, self._num_evals)
+            #params['id'] = trial_name
 
 
-            trial = self._experiment.new_trial(GeneratorRun([Arm(params, name=trial_name)]))
+            trial = self._experiment.new_trial(GeneratorRun([Arm(params)]))
             data = self._experiment.eval_trial(trial)
             self._num_evals += 1
 
-            acc = float(data.df[data.df['metric_name'] == 'val_acc_1']['mean'])
+            acc = float(data.df[data.df['metric_name'] == 'val_acc']['mean'])
             len = float(data.df[data.df['metric_name'] == 'num_params']['mean'])
 
             self._fit =[acc, len]
@@ -114,13 +114,13 @@ class Member:
         params = deepcopy(self.x_coordinate)
         hyperparameter_dict = self._space.get_hyperparameters_dict()
 
-        params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 0
-        params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 0
-        params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 0
+        #params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 0
+        #params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 0
+        #params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 0
 
-        params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 0
-        params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 0
-        params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 0
+        #params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 0
+        #params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 0
+        #params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 0
 
         train_data = []
         for key in params.keys():
@@ -136,7 +136,9 @@ class Member:
                 except:
                     param = params[key]/ (np.sort(hyperparameter_dict[key].choices)[-1])
 
-            train_data.append(param)
+            train_data.append(float(param))
+
+
 
         return train_data
 
@@ -149,7 +151,7 @@ class Member:
         hyperparameter_dict = self._space.get_hyperparameters_dict()
 
         if self._mutation == Mutation.GAUSSIAN:
-            keys = np.random.choice(list(new_x.keys()), 3, replace=False)
+            keys = np.random.choice(list(new_x.keys()), 4, replace=False)
             for k in keys:
 
                 if self._space.is_mutable_hyperparameter(str(k)):
@@ -159,7 +161,7 @@ class Member:
                         mean = new_x[k]
                         upper = hyperparameter_dict[k].upper
                         lower = hyperparameter_dict[k].lower
-                        sd = (upper - lower) / 3
+                        sd = (upper - lower) / 2
                         X = self.get_truncated_normal(mean=mean, sd=sd, low=lower, upp=upper)
 
 

@@ -33,23 +33,23 @@ class MOBOHBWorker(Worker):
         params = deepcopy(config)
         params['budget'] = int(budget)
 
-        params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 16
-        params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 16
-        params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 16
+        #params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 16
+        #params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 16
+        #params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 16
 
-        params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 16
-        params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 16
-        params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 16
+        #params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 16
+        #params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 16
+        #params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 16
 
-        params['kernel_size'] = [3, 5, 7][params['kernel_size']]
-        params['batch_norm'] = bool(params['batch_norm'])
-        params['global_avg_pooling'] = bool(params['global_avg_pooling'])
-        params['id'] = str(config_id)
+        #params['kernel_size'] = [3, 5, 7][params['kernel_size']]
+        #params['batch_norm'] = bool(params['batch_norm'])
+        #params['global_avg_pooling'] = bool(params['global_avg_pooling'])
+        #params['id'] = str(config_id)
 
-        trial = self.experiment.new_trial(GeneratorRun([Arm(params, name=str(config_id))]))
+        trial = self.experiment.new_trial(GeneratorRun([Arm(params)]))
         data = self.experiment.eval_trial(trial)
 
-        acc = float(data.df[data.df['metric_name'] == 'val_acc_1']['mean'])
+        acc = float(data.df[data.df['metric_name'] == 'val_acc']['mean'])
         len = float(data.df[data.df['metric_name'] == 'num_params']['mean'])
 
         return {'loss': (acc, len)}
