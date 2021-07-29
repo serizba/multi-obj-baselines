@@ -16,6 +16,8 @@ import sys
 
 if __name__ == '__main__':
 
+    idx = int(sys.argv[1])
+
     # Parameters Flowers
     # N_init = 50 # Number of initial random samples
     # N = 20000   # Number of MS-EHVI samples (it is not important)
@@ -42,7 +44,7 @@ if __name__ == '__main__':
     nb201 = NasBench201NPY()
     discrete_f = nb201.discrete_call
     discrete_m = 'num_params'
-    experiment = get_nasbench201('MSEHVI')
+    experiment = get_nasbench201(f'MSEHVI_{idx}')
 
     #################
     #### MS-EHVI ####
@@ -62,7 +64,14 @@ if __name__ == '__main__':
     # Proper guided search
     msehvi = MSEHVI(experiment, discrete_m, discrete_f)
     while curr_time - initial_time < 86400:
-        msehvi.step()
+
+        try:
+            msehvi.step()
+        except RuntimeError as e:
+            print(f'An error occurred: {e}', file=sys.stderr, flush=True)
+            trial = experiment.new_trial(Models.SOBOL(experiment.search_space).gen(1))
+            experiment.fetch_data()
+
 
         # Artificially add the time
         trial = list(experiment.trials.values())[-1]
@@ -71,4 +80,4 @@ if __name__ == '__main__':
         trial._time_completed = datetime.fromtimestamp(curr_time)
         print('Time left: ', 86400 - (curr_time - initial_time), file=sys.stderr, flush=True)
      
-    save_experiment(experiment, f'{experiment.name}_time.pickle')
+    save_experiment(experiment, f'{experiment.name}.pickle')

@@ -13,6 +13,8 @@ from baselines import save_experiment
 
 if __name__ == '__main__':
 
+    idx = int(sys.argv[1])
+
     # Parameters Flowers
     # N = 20000   # Number of samples (it is not important)
     # experiment = get_flowers('RandomSearch')  # Function to get the problem
@@ -24,7 +26,7 @@ if __name__ == '__main__':
     # Parameters Nas-Bench-201
     N = 100
     nb201 = NasBench201NPY()
-    experiment = get_nasbench201('RandomSearch')
+    experiment = get_nasbench201(f'RandomSearch_{idx}')
 
     #######################
     #### Random Search ####

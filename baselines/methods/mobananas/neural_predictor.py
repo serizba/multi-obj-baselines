@@ -60,7 +60,7 @@ class Net(torch.nn.Module):
                                   batch_size=batch_size,
                                   shuffle=True)
 
-        loss_criterion = torch.nn.MSELoss()
+        loss_criterion = torch.nn.MSELoss().cuda()
         optimizer = torch.optim.Adam(self.parameters(), lr=0.1)
 
         for epoch in range(num_epochs):  # loop over the dataset multiple times
@@ -75,7 +75,7 @@ class Net(torch.nn.Module):
                 inputs.type(torch.FloatTensor)
 
                 # get the inputs; data is a list of [inputs, labels]
-                y_value = torch.stack(data[1])
+                y_value = torch.stack(data[1]).to(device)
                 y_value = torch.transpose(y_value, 0, 1)
                 y_value.type(torch.FloatTensor)
 
@@ -131,7 +131,7 @@ class Neural_Predictor:
 
         self.num_epochs = num_epochs
         self.num_ensamble_nets = num_ensamble_nets
-        self.networks = [Net() for i in range(self.num_ensamble_nets)]
+        self.networks = [Net().cuda() for i in range(self.num_ensamble_nets)]
         self.all_architecture = []
 
     def train_models(self, x):

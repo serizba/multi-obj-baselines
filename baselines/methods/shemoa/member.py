@@ -1,9 +1,11 @@
+from datetime import datetime
 import enum
 import uuid
 from copy import deepcopy
+from ax.modelbridge.registry import Models
 
 import numpy as np
-from typing import Optional, Dict
+from typing import List, Optional, Dict
 
 from ax import Experiment, GeneratorRun, Arm
 
@@ -28,15 +30,20 @@ class Member:
     Class to simplify member handling.
     """
 
-    def __init__(self, search_space,
-                 budget: int,
-                 mutation: Mutation,
-                 recombination: Recombination,
-                 name_file: Optional[str] = 'eash',
-                 sigma: Optional[float] = None,
-                 recom_prob: Optional[float] = None,
-                 x_coordinate: Optional[Dict] = None,
-                 experiment: Experiment = None) -> None:
+    def __init__(
+        self,
+        nb201,
+        experiment: Experiment,
+        non_mutable_hp: List[str],
+        num_mutated: int,
+        budget: int,
+        mutation: Mutation,
+        recombination: Recombination,
+        name_file: Optional[str] = 'eash',
+        sigma: Optional[float] = None,
+        recom_prob: Optional[float] = None,
+        x_coordinate: Optional[Dict] = None,
+    ) -> None:
         """
         Init
         :param initial_x: Initial coordinate of the member
@@ -46,10 +53,11 @@ class Member:
         :param sigma: Optional hyperparameter that is only active if mutation is gaussian
         :param recom_prob: Optional hyperparameter that is only active if recombination is uniform
         """
-        self._space = search_space
+        self._space = experiment.search_space
+        self._non_mutable_hp = non_mutable_hp
         self._id = uuid.uuid4()
         self._name_file = name_file
-        self._x = search_space.sample_configuration().get_dictionary() if not x_coordinate else x_coordinate
+        self._x = self.sample_configuration() if not x_coordinate else x_coordinate
         self._age = 0  # basically indicates how many offspring were generated from this member
         self._mutation = mutation
         self._recombination = recombination
@@ -60,7 +68,12 @@ class Member:
         self._budget = budget
         self._experiment = experiment
         self._num_evals = 0
+        self.num_mutated = num_mutated
+        self.nb201 = nb201
         # self.logger = logging.getLogger(self.__class__.__name__)
+
+    def sample_configuration(self):
+        return Models.SOBOL(self._space).gen(1).arms[0].parameters
 
     @property  # fitness can only be queried never set
     def fitness(self):
@@ -69,18 +82,9 @@ class Member:
 
             ############ AX THINGS ##############
             params = deepcopy(self._x)
-            params['budget'] = int(self._budget)
 
-            params['n_conv_0'] = params['n_conv_0'] if 'n_conv_0' in params else 16
-            params['n_conv_1'] = params['n_conv_1'] if 'n_conv_1' in params else 16
-            params['n_conv_2'] = params['n_conv_2'] if 'n_conv_2' in params else 16
-
-            params['n_fc_0'] = params['n_fc_0'] if 'n_fc_0' in params else 16
-            params['n_fc_1'] = params['n_fc_1'] if 'n_fc_1' in params else 16
-            params['n_fc_2'] = params['n_fc_2'] if 'n_fc_2' in params else 16
-
-            params['batch_norm'] = bool(params['batch_norm'])
-            params['global_avg_pooling'] = bool(params['global_avg_pooling'])
+            if 'budget' in params:
+                params['budget'] = int(self._budget)
 
             trial_name = '{}-{}'.format(self._id, self._num_evals)
             params['id'] = trial_name
@@ -90,7 +94,12 @@ class Member:
             data = self._experiment.eval_trial(trial)
             self._num_evals += 1
 
-            acc = float(data.df[data.df['metric_name'] == 'val_acc_1']['mean'])
+            # Artificially add the time
+            trial._time_created = datetime.fromtimestamp(self.nb201.last_ts)
+            self.nb201.last_ts = self.nb201.last_ts + self.nb201.time(trial.arm.parameters)
+            trial._time_completed = datetime.fromtimestamp(self.nb201.last_ts)
+
+            acc = float(data.df[data.df['metric_name'] == 'val_acc']['mean'])
             len = float(data.df[data.df['metric_name'] == 'num_params']['mean'])
 
             self._fit =[len, acc]
@@ -130,18 +139,22 @@ class Member:
         # self.logger.debug(new_x)
 
         if self._mutation == Mutation.UNIFORM:
-            keys = np.random.choice(list(new_x.keys()), 5, replace=False)
+            keys = np.random.choice(list(new_x.keys()), self.num_mutated, replace=False)
             for k in keys:
                 k = str(k)
-                if self._space.is_mutable_hyperparameter(k):
-                    new_x[k] = self._space.sample_hyperparameter(k)
+                if not k in self._non_mutable_hp:
+                    new_x[k] = self.sample_configuration()[k]
 
         elif self._mutation != Mutation.NONE:
             # We won't consider any other mutation types
             raise NotImplementedError
 
-        child = Member(self._space, self._budget, self._mutation, self._recombination, self._name_file,
-                       self._sigma, self._recom_prob, new_x, self._experiment)
+        child = Member(
+            self.nb201, self._experiment, self._non_mutable_hp, self.num_mutated,
+            self._budget, self._mutation, 
+            self._recombination, self._name_file, self._sigma, 
+            self._recom_prob, new_x
+        )
         self._age += 1
         return child
 
@@ -160,7 +173,7 @@ class Member:
             new_x = self.x_coordinate.copy()
             for k in new_x.keys():
                 if (np.random.rand() >= self._recom_prob) and (k in partner.x_coordinate.keys()) \
-                   and (self._space.is_mutable_hyperparameter(k)):
+                   and (not k in self._non_mutable_hp):
                     new_x[k] = partner.x_coordinate[k]
 
         elif self._recombination == Recombination.NONE:
@@ -171,8 +184,11 @@ class Member:
         # self.logger.debug('new point after recombination:')
         # self.logger.debug(new_x)
         
-        child = Member(self._space, self._budget, self._mutation, self._recombination, self._name_file,
-                       self._sigma, self._recom_prob, new_x, self._experiment)
+        child = Member(
+            self.nb201, self._experiment, self._non_mutable_hp, self.num_mutated,
+            self._budget, self._mutation, self._recombination, self._name_file,
+            self._sigma, self._recom_prob, new_x
+        )
         self._age += 1
         return child
 

@@ -16,6 +16,8 @@ import sys
 
 if __name__ == '__main__':
 
+    idx = int(sys.argv[1])
+
     # Parameters Flowers
     #N_init = 10
     #min_budget = 5
@@ -39,7 +41,7 @@ if __name__ == '__main__':
     # experiment = get_fashion('MOSHBANANAS')
 
     nb201 = NasBench201NPY()
-    experiment = get_nasbench201_cs('MOBANANAS')
+    experiment = get_nasbench201_cs(f'MOBANANAS_{idx}')
     search_space = NASSearchSpace()
     initial_samples = 20
     min_budget = 10
@@ -60,10 +62,10 @@ if __name__ == '__main__':
     curr_time = time()
     initial_time = curr_time
 
-    while curr_time - initial_time < 86400:
+    while curr_time - initial_time < 86400 // 2:
         print(type(banana))
         time_budget = curr_time - initial_time
-        banana.step(curr_time, initial_time, 86400, nb201)
+        banana.step(curr_time, initial_time, 86400 // 2, nb201)
 
         trial = list(experiment.trials.values())[-1]
         trial._time_created = datetime.fromtimestamp(curr_time)

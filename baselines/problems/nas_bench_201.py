@@ -31,11 +31,12 @@ def get_nasbench201(name=None):
     )
 
     params = [
-        ChoiceParameter(
-            name=f'p{p}', parameter_type=ParameterType.INT, values=[0, 1, 2, 3, 4]
+        RangeParameter(
+            name=f'p{p}', parameter_type=ParameterType.FLOAT, lower=0.0, upper=4.5
         ) for p in range(1, 6+1)
     ]
     params.append(FixedParameter('budget', ParameterType.INT, 12))
+    params.append(FixedParameter('id', ParameterType.STRING, 'dummy'))
     search_space = SearchSpace(
         parameters=params,
     )

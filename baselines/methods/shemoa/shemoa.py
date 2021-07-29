@@ -1,7 +1,10 @@
 import math
+from typing import List
+from baselines.problems.nas_bench_201 import NasBench201NPY
 import numpy as np
 
 from ax import Experiment
+from time import time
 
 from baselines import nDS, computeHV2D
 from .member import Member
@@ -25,8 +28,9 @@ class SHEMOA:
     """
     def __init__(
         self,
-        search_space,
         experiment: Experiment,
+        non_mutable_hp: List[str],
+        num_mutated: int,
         population_size: int = 10,
         budget_min: int = 5,
         budget_max: int = 50,
@@ -61,17 +65,22 @@ class SHEMOA:
             population_size
         )
 
+        self.nb201 = NasBench201NPY()
+        self.nb201.last_ts = time()
+
         # Initialize population
         self.population = [
             Member(
-                search_space,
+                self.nb201,
+                experiment,
+                non_mutable_hp,
+                num_mutated,
                 budgets[0],
                 mutation_type,
                 recombination_type,
                 'dummy.txt',
                 sigma,
                 recom_proba,
-                experiment=self.experiment
             ) for _ in range(population_size)
         ]
 
