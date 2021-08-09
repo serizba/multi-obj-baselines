@@ -149,7 +149,8 @@ class Visualizer:
 
         if time:
             ax.set_xlabel("Walltime (hours)")
-            ax.set_ylim(bottom=172, top=176)
+            #ax.set_ylim(bottom=172, top=176)
+            ax.set_ylim(bottom=8650, top=9150)
         else:
             ax.set_xlabel("Num. Evaluations")
 
@@ -216,7 +217,7 @@ class Visualizer:
             total_its = total_its[idx]
 
             axes[i].scatter(
-                total_x, -total_y, c=total_its, alpha=0.7, vmin=0, vmax=max_its
+                total_x, total_y, c=total_its, alpha=0.7, vmin=0, vmax=max_its
             )
          
             axes[i].set_xlim(left=min_x, right=max_x)
@@ -385,9 +386,9 @@ class Visualizer:
             del data
             del pareto
 
-        ax.set_xlabel('Parameters (MB)')
+        ax.set_xlabel(metric_x[1])
         
-        ax.set_ylabel('Accuracy')
+        ax.set_ylabel(metric_y[1])
 
         # ax.set_xlim(left=2, right=8)
 
@@ -400,7 +401,7 @@ class Visualizer:
         # ax.set_xticklabels([f'$10^{int(i)}$' for i in ticks])
 
         ax.set_ylim(top=-80, bottom=-95)
-        ax.set_xlim(left=0, right=1.5)
+        ax.set_xlim(left=0, right=10)
 
         ax.set_yticks(-np.arange(80, 95, 2))
         ticks = ax.get_yticks()

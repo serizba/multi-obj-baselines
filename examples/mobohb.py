@@ -9,6 +9,8 @@ from baselines.problems import NASSearchSpace
 
 import sys
 
+from baselines.problems.hw_nas_bench import HW_NAS_Bench, get_hwnasbench201
+
 if __name__ == '__main__':
 
     idx = int(sys.argv[1])
@@ -34,7 +36,20 @@ if __name__ == '__main__':
     # experiment = get_flowers('MOBOHB')
 
     # Parameters Nas-Bench-201
-    experiment = get_nasbench201_cs(f'MOBOHB_{idx}')
+    # experiment = get_nasbench201_cs(f'MOBOHB_{idx}')
+    # search_space = NASSearchSpace()
+    # N_init = 50
+    # num_candidates = 24
+    # gamma = 0.10
+    # min_budget = 10
+    # max_budget = 200
+    # max_function_evals = 1000
+    # nb201 = NasBench201NPY()
+
+
+
+    # Parameters HW-Nas-Bench-201
+    experiment = get_hwnasbench201(f'MOBOHB_{idx}', 'cifar100')
     search_space = NASSearchSpace()
     N_init = 50
     num_candidates = 24
@@ -42,7 +57,7 @@ if __name__ == '__main__':
     min_budget = 10
     max_budget = 200
     max_function_evals = 1000
-    nb201 = NasBench201NPY()
+    nb201 = HW_NAS_Bench("nasbench201", "cifar100")
     ################
     #### MOBOHB ####
     ################

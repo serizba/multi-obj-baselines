@@ -1,4 +1,5 @@
 import sys
+from baselines.problems.hw_nas_bench import get_hwnasbench201
 from baselines.problems.nas_bench_201 import get_nasbench201
 from baselines.problems.simple_problems import get_branin_currin
 from baselines.problems import get_flowers
@@ -52,10 +53,22 @@ if __name__ == '__main__':
     # selection_type = ParentSelection.TOURNAMENT
 
 
-    # Parameters NB201
+    # # Parameters NB201
+    # N_init = 50
+    # max_function_evals = 1000
+    # experiment = get_nasbench201(f'SHEMOA_{idx}')
+    # non_mutable_hp = []
+    # num_mutated = 1
+    # min_budget = 5
+    # max_budget = 50
+    # mutation_type = Mutation.UNIFORM
+    # recombination_type = Recombination.UNIFORM
+    # selection_type = ParentSelection.TOURNAMENT
+
+    # Parameters HWNB201
     N_init = 50
     max_function_evals = 1000
-    experiment = get_nasbench201(f'SHEMOA_{idx}')
+    experiment = get_hwnasbench201(f'SHEMOA_{idx}', 'cifar100')
     non_mutable_hp = []
     num_mutated = 1
     min_budget = 5
@@ -79,4 +92,4 @@ if __name__ == '__main__':
         total_number_of_function_evaluations=max_function_evals
     )
     ea.optimize()
-    save_experiment(experiment, f'{experiment.name}_time.pickle')
+    save_experiment(experiment, f'{experiment.name}.pickle')

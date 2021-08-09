@@ -10,6 +10,7 @@ from baselines.problems import get_nasbench201_cs, NasBench201NPY
 from baselines.problems import NASSearchSpace
 from datetime import datetime
 from time import time
+from baselines.problems.hw_nas_bench import HW_NAS_Bench, get_hwnasbench201
 from tqdm import tqdm
 from ax import Models
 import sys
@@ -40,8 +41,19 @@ if __name__ == '__main__':
     # search_space = FashionSearchSpace()
     # experiment = get_fashion('MOSHBANANAS')
 
-    nb201 = NasBench201NPY()
-    experiment = get_nasbench201_cs(f'MOBANANAS_{idx}')
+    # nb201 = NasBench201NPY()
+    # experiment = get_nasbench201_cs(f'MOBANANAS_{idx}')
+    # search_space = NASSearchSpace()
+    # initial_samples = 20
+    # min_budget = 10
+    # max_budget = 200
+    # function_evaluations = 10000
+    # num_arch=20
+    # select_models=10
+    # eta=3
+
+    nb201 = HW_NAS_Bench("nasbench201", "cifar100")
+    experiment = get_hwnasbench201(f'MOBANANAS_{idx}', 'cifar100')
     search_space = NASSearchSpace()
     initial_samples = 20
     min_budget = 10
@@ -50,6 +62,7 @@ if __name__ == '__main__':
     num_arch=20
     select_models=10
     eta=3
+
 
 
     #####################

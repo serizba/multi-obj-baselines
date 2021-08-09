@@ -9,6 +9,7 @@ from baselines import save_experiment
 from baselines.methods.msehvi.msehvi import MSEHVI
 
 from time import time
+from baselines.problems.hw_nas_bench import HW_NAS_Bench, get_hwnasbench201
 from tqdm import tqdm
 from ax import Models
 import sys
@@ -39,12 +40,19 @@ if __name__ == '__main__':
     # discrete_m = 'a'
     # experiment = get_branin_currin('MSEHVI')
 
+    # # Parameters Nas-Bench-201
+    # N_init = 50
+    # nb201 = NasBench201NPY()
+    # discrete_f = nb201.discrete_call
+    # discrete_m = 'num_params'
+    # experiment = get_nasbench201(f'MSEHVI_{idx}')
+
     # Parameters Nas-Bench-201
     N_init = 50
-    nb201 = NasBench201NPY()
+    nb201 = HW_NAS_Bench("nasbench201", "cifar100")
     discrete_f = nb201.discrete_call
-    discrete_m = 'num_params'
-    experiment = get_nasbench201(f'MSEHVI_{idx}')
+    discrete_m = 'edgegpu_latency'
+    experiment = get_hwnasbench201(f'MSEHVI_{idx}', 'cifar100')
 
     #################
     #### MS-EHVI ####
@@ -63,7 +71,7 @@ if __name__ == '__main__':
 
     # Proper guided search
     msehvi = MSEHVI(experiment, discrete_m, discrete_f)
-    while curr_time - initial_time < 86400:
+    while curr_time - initial_time < 86400 // 2:
 
         try:
             msehvi.step()

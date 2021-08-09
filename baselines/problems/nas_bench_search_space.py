@@ -75,7 +75,7 @@ class NASSearchSpace(CS.ConfigurationSpace):
 
        # b = FixedParameter('budget', ParameterType.INT, 25)
 
-       # i = FixedParameter('id', ParameterType.STRING, 'dummy')
+        # i = FixedParameter('id', ParameterType.STRING, 'dummy')
 
         return SearchSpace(
             parameters=[p1,p2,p3,p4,p5,p6,b],
